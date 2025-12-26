@@ -1,6 +1,7 @@
 // AI Prompt Helper - Advanced Content Script
 
 let customTemplates = [];
+let lastFocusedInput = null; // Track the last focused input element
 
 // Load templates on start
 chrome.storage.sync.get({ templates: [] }, (data) => {
@@ -13,6 +14,21 @@ chrome.storage.onChanged.addListener((changes, area) => {
     customTemplates = changes.templates.newValue;
   }
 });
+
+// Track focus on inputs across the page
+document.addEventListener('focusin', (e) => {
+  const el = e.target;
+  // Only track textareas and contenteditable elements
+  if (el.tagName === 'TEXTAREA' || el.getAttribute('contenteditable') === 'true') {
+    // Don't track our own custom input
+    if (el.id !== 'aph-custom-input') {
+      lastFocusedInput = {
+        element: el,
+        type: el.tagName === 'TEXTAREA' ? 'textarea' : 'contenteditable'
+      };
+    }
+  }
+}, true);
 
 function createToolbar() {
   if (document.getElementById('ai-prompt-helper-container')) return;
@@ -209,29 +225,30 @@ function insertText(textToInsert) {
 }
 
 function getActiveInput() {
-  // 1. First priority: Check if any relevant input is currently focused
-  const activeElement = document.activeElement;
+  // 1. First priority: Use our tracked last focused input
+  if (lastFocusedInput && lastFocusedInput.element && document.body.contains(lastFocusedInput.element)) {
+    return lastFocusedInput;
+  }
 
+  // 2. Second priority: Check if any relevant input is currently focused
+  const activeElement = document.activeElement;
   if (activeElement) {
-    // Check if it's a textarea we care about
-    if (activeElement.tagName === 'TEXTAREA') {
+    if (activeElement.tagName === 'TEXTAREA' && activeElement.id !== 'aph-custom-input') {
       return { element: activeElement, type: 'textarea' };
     }
-    // Check if it's a contenteditable
     if (activeElement.getAttribute('contenteditable') === 'true') {
       return { element: activeElement, type: 'contenteditable' };
     }
   }
 
-  // 2. Second priority: Find the most visible/recent input
-  // For ChatGPT edit dialogs, look for textareas in dialogs first
+  // 3. Third priority: Look for edit dialogs
   const editTextarea = document.querySelector('[role="dialog"] textarea, .edit-message textarea');
   if (editTextarea) return { element: editTextarea, type: 'textarea' };
 
-  // 3. Fallback: Main chat input
+  // 4. Fallback: Main chat input
   const mainTextarea = document.querySelector('textarea#prompt-textarea') ||
     document.querySelector('textarea[data-id="root"]') ||
-    document.querySelector('textarea');
+    document.querySelector('textarea:not(#aph-custom-input)');
   if (mainTextarea) return { element: mainTextarea, type: 'textarea' };
 
   const contentEditable = document.querySelector('div[contenteditable="true"][role="textbox"]') ||
