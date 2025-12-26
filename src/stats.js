@@ -208,8 +208,10 @@ function setupCollapsibleCodeBlocks() {
 }
 
 function initStatsModule() {
+    console.log('%c🔍 PromptGlass Stats Module STARTING', 'background: #00d4ff; color: black; font-size: 16px; padding: 5px;');
     setupFetchInterceptor();
     setInterval(setupCollapsibleCodeBlocks, 2000);
+    console.log('%c✅ PromptGlass Stats Module READY', 'background: #30d158; color: black; font-size: 16px; padding: 5px;');
 }
 
 window.PromptGlassStats = {
@@ -217,3 +219,7 @@ window.PromptGlassStats = {
     getStats: () => stats,
     updateDisplay: updateStatsDisplay
 };
+
+// AUTO-INIT: Run immediately since we're loaded before content.js
+console.log('%c🚀 PromptGlass stats.js loaded', 'color: #00d4ff; font-weight: bold;');
+initStatsModule();
