@@ -449,8 +449,10 @@ const observer = new MutationObserver((mutations) => {
 observer.observe(document.body, { childList: true, subtree: true });
 setTimeout(createToolbar, 1000);
 
-// Initialize stats module (token counting, cost estimation, collapsible code)
+// Force update stats display if data was captured before UI loaded
 if (window.PromptGlassStats) {
-  window.PromptGlassStats.init();
+  // Stats module auto-inits at document_start
+  // We just need to sync the UI now that it exists
+  setTimeout(() => window.PromptGlassStats.updateDisplay(), 500);
 }
 

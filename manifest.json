@@ -22,12 +22,23 @@
         "https://gemini.google.com/*"
       ],
       "js": [
-        "src/stats.js",
+        "src/stats.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://gemini.google.com/*"
+      ],
+      "js": [
         "src/content.js"
       ],
       "css": [
         "src/styles.css"
-      ]
+      ],
+      "run_at": "document_idle"
     }
   ],
   "action": {
