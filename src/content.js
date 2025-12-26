@@ -71,11 +71,6 @@ function createToolbar() {
   container.innerHTML = `
     <div class="aph-handle">⋮⋮</div>
     
-    <!-- Stats Display -->
-    <div id="aph-stats" class="aph-stats" title="Token usage & cost">
-      <span>↑0</span><span>↓0</span><span>$0.00</span>
-    </div>
-    
     <!-- 1 Sentence -->
     <button class="aph-btn" title="1 Sentence">1</button>
     
@@ -449,10 +444,5 @@ const observer = new MutationObserver((mutations) => {
 observer.observe(document.body, { childList: true, subtree: true });
 setTimeout(createToolbar, 1000);
 
-// Force update stats display if data was captured before UI loaded
-if (window.PromptGlassStats) {
-  // Stats module auto-inits at document_start
-  // We just need to sync the UI now that it exists
-  setTimeout(() => window.PromptGlassStats.updateDisplay(), 500);
-}
+
 
