@@ -36,7 +36,7 @@ function createToolbar() {
   const container = document.createElement('div');
   container.id = 'ai-prompt-helper-container';
   container.innerHTML = `
-    <div class="aph-handle"></div>
+    <div class="aph-handle">⋮⋮</div>
     
     <!-- 1 Sentence -->
     <button class="aph-btn" title="1 Sentence">1</button>
@@ -296,16 +296,18 @@ function makeDraggable(element) {
   let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
   let isDragging = false;
 
-  // Make the entire container draggable, but only initiate from handle or empty space
+  // Make draggable from handle
   element.addEventListener('mousedown', (e) => {
-    // Only drag if clicking on handle or the container itself (not buttons)
-    const isHandle = e.target.classList.contains('aph-handle');
-    const isContainer = e.target.id === 'ai-prompt-helper-container';
+    // Use closest() to handle clicks on child elements (like ::before pseudo)
+    const clickedHandle = e.target.closest('.aph-handle');
+    const clickedContainer = e.target === element;
 
-    if (!isHandle && !isContainer) return; // Clicked on a button - don't drag
+    // Only initiate drag from handle or container background
+    if (!clickedHandle && !clickedContainer) return;
 
     isDragging = true;
     e.preventDefault();
+    e.stopPropagation();
     pos3 = e.clientX;
     pos4 = e.clientY;
 
