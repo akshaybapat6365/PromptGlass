@@ -1,0 +1,147 @@
+/* Main Floating Container (Liquid Glass) */
+#ai-prompt-helper-container {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: row;
+  /* Horizontal layout now */
+  gap: 8px;
+  padding: 8px;
+  background: rgba(220, 220, 230, 0.4);
+  /* Light glass */
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  align-items: center;
+}
+
+/* Dark mode preference query could go here, but default to adaptive glass */
+@media (prefers-color-scheme: dark) {
+  #ai-prompt-helper-container {
+    background: rgba(40, 40, 45, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Header Handle - Minimal Grip */
+.aph-handle {
+  width: 6px;
+  height: 24px;
+  background: rgba(128, 128, 128, 0.4);
+  border-radius: 3px;
+  cursor: grab;
+  margin-right: 4px;
+}
+
+/* Buttons (Round, Minimal) */
+.aph-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #333;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+}
+
+@media (prefers-color-scheme: dark) {
+  .aph-btn {
+    color: #fff;
+  }
+}
+
+/* Hover Magnification (Apple Dock Style) */
+.aph-btn:hover {
+  transform: scale(1.2) translateY(-2px);
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.aph-btn:active {
+  transform: scale(0.95);
+}
+
+/* Special Buttons */
+.aph-btn-custom {
+  font-size: 12px;
+  background: rgba(10, 132, 255, 0.2);
+  /* Blue tint */
+}
+
+.aph-btn-save {
+  background: rgba(48, 209, 88, 0.2);
+  /* Green tint */
+  font-size: 18px;
+  font-weight: 300;
+}
+
+.aph-btn-star {
+  background: rgba(255, 159, 10, 0.2);
+  /* Orange tint */
+}
+
+/* Custom Number Input Popup */
+#aph-custom-input {
+  width: 40px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-weight: bold;
+  text-align: center;
+  outline: none;
+  display: none;
+}
+
+.aph-btn.expanded {
+  width: auto;
+  padding: 0 8px;
+  border-radius: 16px;
+}
+
+/* Tooltip/Popup for Templates */
+#aph-popup-menu {
+  position: absolute;
+  bottom: 50px;
+  right: 0;
+  background: rgba(30, 30, 35, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  padding: 8px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 150px;
+}
+
+#aph-popup-menu.visible {
+  display: flex;
+}
+
+.aph-menu-item {
+  padding: 8px 12px;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.aph-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

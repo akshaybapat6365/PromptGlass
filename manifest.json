@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "PromptGlass",
+  "version": "2.0",
+  "description": "Minimalist liquid-glass prompt helper for AI chats.",
+  "icons": {
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": false
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://gemini.google.com/*"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "css": [
+        "src/styles.css"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "AI Prompt Helper"
+  }
+}
