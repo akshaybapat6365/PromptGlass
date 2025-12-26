@@ -209,8 +209,30 @@ function insertText(textToInsert) {
 }
 
 function getActiveInput() {
-  const textarea = document.querySelector('textarea#prompt-textarea') || document.querySelector('textarea[data-id="root"]');
-  if (textarea) return { element: textarea, type: 'textarea' };
+  // 1. First priority: Check if any relevant input is currently focused
+  const activeElement = document.activeElement;
+
+  if (activeElement) {
+    // Check if it's a textarea we care about
+    if (activeElement.tagName === 'TEXTAREA') {
+      return { element: activeElement, type: 'textarea' };
+    }
+    // Check if it's a contenteditable
+    if (activeElement.getAttribute('contenteditable') === 'true') {
+      return { element: activeElement, type: 'contenteditable' };
+    }
+  }
+
+  // 2. Second priority: Find the most visible/recent input
+  // For ChatGPT edit dialogs, look for textareas in dialogs first
+  const editTextarea = document.querySelector('[role="dialog"] textarea, .edit-message textarea');
+  if (editTextarea) return { element: editTextarea, type: 'textarea' };
+
+  // 3. Fallback: Main chat input
+  const mainTextarea = document.querySelector('textarea#prompt-textarea') ||
+    document.querySelector('textarea[data-id="root"]') ||
+    document.querySelector('textarea');
+  if (mainTextarea) return { element: mainTextarea, type: 'textarea' };
 
   const contentEditable = document.querySelector('div[contenteditable="true"][role="textbox"]') ||
     document.querySelector('div[contenteditable="true"]');

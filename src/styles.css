@@ -36,19 +36,34 @@
   }
 }
 
-/* Drag Handle */
+/* Drag Handle - Larger and more visible */
 .aph-handle {
-  width: 4px;
-  height: 18px;
-  background: rgba(128, 128, 128, 0.35);
-  border-radius: 2px;
+  width: 8px;
+  height: 24px;
+  background: rgba(128, 128, 128, 0.4);
+  border-radius: 4px;
   cursor: grab;
-  margin-right: 2px;
-  transition: background 0.2s;
+  margin-right: 4px;
+  transition: background 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aph-handle::before {
+  content: '⋮⋮';
+  font-size: 8px;
+  color: rgba(128, 128, 128, 0.6);
+  letter-spacing: -2px;
 }
 
 .aph-handle:hover {
-  background: rgba(128, 128, 128, 0.6);
+  background: rgba(128, 128, 128, 0.7);
+  transform: scale(1.1);
+}
+
+.aph-handle:active {
+  cursor: grabbing;
 }
 
 /* Buttons - Compact and Glassy */
