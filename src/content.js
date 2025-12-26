@@ -225,14 +225,25 @@ function insertText(textToInsert) {
 }
 
 function getActiveInput() {
-  // 1. First priority: Use our tracked last focused input
-  if (lastFocusedInput && lastFocusedInput.element && document.body.contains(lastFocusedInput.element)) {
+  // Helper to check if element is truly usable
+  function isUsable(el) {
+    if (!el || !document.body.contains(el)) return false;
+    // Check if element is visible (not in a closed dialog)
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  // 1. First priority: Use our tracked last focused input (if still valid)
+  if (lastFocusedInput && lastFocusedInput.element && isUsable(lastFocusedInput.element)) {
     return lastFocusedInput;
+  } else {
+    // Clear stale reference
+    lastFocusedInput = null;
   }
 
   // 2. Second priority: Check if any relevant input is currently focused
   const activeElement = document.activeElement;
-  if (activeElement) {
+  if (activeElement && isUsable(activeElement)) {
     if (activeElement.tagName === 'TEXTAREA' && activeElement.id !== 'aph-custom-input') {
       return { element: activeElement, type: 'textarea' };
     }
@@ -241,19 +252,30 @@ function getActiveInput() {
     }
   }
 
-  // 3. Third priority: Look for edit dialogs
+  // 3. Third priority: Look for edit dialogs (visible ones)
   const editTextarea = document.querySelector('[role="dialog"] textarea, .edit-message textarea');
-  if (editTextarea) return { element: editTextarea, type: 'textarea' };
+  if (editTextarea && isUsable(editTextarea)) {
+    return { element: editTextarea, type: 'textarea' };
+  }
 
   // 4. Fallback: Main chat input
   const mainTextarea = document.querySelector('textarea#prompt-textarea') ||
-    document.querySelector('textarea[data-id="root"]') ||
-    document.querySelector('textarea:not(#aph-custom-input)');
-  if (mainTextarea) return { element: mainTextarea, type: 'textarea' };
+    document.querySelector('textarea[data-id="root"]');
+  if (mainTextarea && isUsable(mainTextarea)) {
+    return { element: mainTextarea, type: 'textarea' };
+  }
+
+  // Try any visible textarea
+  const anyTextarea = document.querySelector('textarea:not(#aph-custom-input)');
+  if (anyTextarea && isUsable(anyTextarea)) {
+    return { element: anyTextarea, type: 'textarea' };
+  }
 
   const contentEditable = document.querySelector('div[contenteditable="true"][role="textbox"]') ||
     document.querySelector('div[contenteditable="true"]');
-  if (contentEditable) return { element: contentEditable, type: 'contenteditable' };
+  if (contentEditable && isUsable(contentEditable)) {
+    return { element: contentEditable, type: 'contenteditable' };
+  }
 
   return null;
 }

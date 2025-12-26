@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1c1c1e;
+            color: #fff;
+            margin: 0;
+            padding: 16px;
+            width: 200px;
+        }
+
+        h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-primary {
+            background: rgba(10, 132, 255, 0.3);
+            border-color: rgba(10, 132, 255, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <h3>PromptGlass</h3>
+    <button class="btn btn-primary" id="options">⚙️ Manage Templates</button>
+    <button class="btn" id="help">📖 How to Use</button>
+    <script src="popup.js"></script>
+</body>
+
+</html>

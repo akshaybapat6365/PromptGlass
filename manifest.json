@@ -30,6 +30,10 @@
     }
   ],
   "action": {
-    "default_title": "AI Prompt Helper"
+    "default_title": "PromptGlass",
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "128": "icons/icon128.png"
+    }
   }
 }
