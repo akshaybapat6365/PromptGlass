@@ -39,12 +39,13 @@ safeStorageGet({ templates: [] }, (data) => {
 // Listen for storage changes
 try {
   chrome.storage.onChanged.addListener((changes, area) => {
+    if (!isExtensionValid()) return; // Guard inside callback
     if (area === 'sync' && changes.templates) {
       customTemplates = changes.templates.newValue;
     }
   });
 } catch (e) {
-  console.warn('PromptGlass: Could not add storage listener');
+  // Ignore - extension context invalid
 }
 
 // Track focus on inputs across the page
