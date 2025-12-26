@@ -3,32 +3,49 @@
 let customTemplates = [];
 let lastFocusedInput = null; // Track the last focused input element
 
-// Helper to check if extension context is valid
-function isContextValid() {
+// Helper to check if extension context is still valid
+function isExtensionValid() {
   try {
-    return !!chrome.runtime?.id;
-  } catch {
+    return chrome.runtime && !!chrome.runtime.id;
+  } catch (e) {
     return false;
   }
 }
 
-// Load templates on start
-try {
-  chrome.storage.sync.get({ templates: [] }, (data) => {
-    if (chrome.runtime.lastError || !isContextValid()) return;
-    customTemplates = data.templates;
-  });
-} catch (e) {
-  console.warn('PromptGlass: Extension context invalidated. Please refresh the page.');
+// Safely call chrome APIs
+function safeStorageGet(keys, callback) {
+  if (!isExtensionValid()) return;
+  try {
+    chrome.storage.sync.get(keys, callback);
+  } catch (e) {
+    console.warn('PromptGlass: Extension context invalidated');
+  }
 }
 
-// Listen for storage changes
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (!isContextValid()) return;
-  if (area === 'sync' && changes.templates) {
-    customTemplates = changes.templates.newValue;
+function safeStorageSet(data, callback) {
+  if (!isExtensionValid()) return;
+  try {
+    chrome.storage.sync.set(data, callback);
+  } catch (e) {
+    console.warn('PromptGlass: Extension context invalidated');
   }
+}
+
+// Load templates on start
+safeStorageGet({ templates: [] }, (data) => {
+  if (data) customTemplates = data.templates;
 });
+
+// Listen for storage changes
+try {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync' && changes.templates) {
+      customTemplates = changes.templates.newValue;
+    }
+  });
+} catch (e) {
+  console.warn('PromptGlass: Could not add storage listener');
+}
 
 // Track focus on inputs across the page
 document.addEventListener('focusin', (e) => {
@@ -160,7 +177,11 @@ function createToolbar() {
     manage.style.borderTop = '1px solid rgba(255,255,255,0.1)';
     manage.style.marginTop = '4px';
     manage.innerText = "⚙️ Manage Templates";
-    manage.addEventListener('click', () => chrome.runtime.sendMessage({ openOptions: true }));
+    manage.addEventListener('click', () => {
+      if (isExtensionValid()) {
+        try { chrome.runtime.sendMessage({ openOptions: true }); } catch (e) { }
+      }
+    });
     menu.appendChild(manage);
 
     menu.classList.toggle('visible');
@@ -190,16 +211,8 @@ function createToolbar() {
       }
 
       // Save to templates
-      if (!isContextValid()) {
-        showToast("Extension reloaded - please refresh page", true);
-        return;
-      }
-
-      chrome.storage.sync.get({ templates: [] }, (data) => {
-        if (chrome.runtime.lastError || !isContextValid()) {
-          showToast("Extension error - refresh page", true);
-          return;
-        }
+      safeStorageGet({ templates: [] }, (data) => {
+        if (!data) return;
         const newTmpl = {
           id: Date.now().toString(),
           label: cleanText.substring(0, 10) + '...', // Auto-label
@@ -207,8 +220,7 @@ function createToolbar() {
         };
         const updated = data.templates;
         updated.push(newTmpl);
-        chrome.storage.sync.set({ templates: updated }, () => {
-          if (chrome.runtime.lastError || !isContextValid()) return;
+        safeStorageSet({ templates: updated }, () => {
           showToast("Saved as Template!");
         });
       });
@@ -405,11 +417,8 @@ function saveToHistory() {
 
   lastSavedText = text; // Debounce duplicate saves
 
-  if (!isContextValid()) return; // Extension reloaded, silently skip
-
-  chrome.storage.sync.get({ history: [] }, (data) => {
-    if (chrome.runtime.lastError || !isContextValid()) return;
-
+  safeStorageGet({ history: [] }, (data) => {
+    if (!data) return;
     const history = data.history;
     history.push({
       timestamp: Date.now(),
@@ -419,12 +428,8 @@ function saveToHistory() {
     // Limit history to 50 items for Cloud Sync quotas (max 100KB total)
     if (history.length > 50) history.shift();
 
-    chrome.storage.sync.set({ history }, () => {
-      if (chrome.runtime.lastError) {
-        console.warn("Cloud Sync Error:", chrome.runtime.lastError);
-      } else if (isContextValid()) {
-        console.log("PromptGlass: Saved to Cloud History");
-      }
+    safeStorageSet({ history }, () => {
+      console.log("PromptGlass: Saved to Cloud History");
     });
   });
 }
