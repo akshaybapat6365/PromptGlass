@@ -7,7 +7,14 @@ let stats = {
     totalCost: 0,
     responseTime: 0,
     promptCount: 0,
-    currentModel: 'unknown'
+    currentModel: 'unknown',
+    // Service quality monitoring
+    accountType: 'unknown',    // free, plus, team, pro
+    verifiedModel: 'unknown',  // actual model responding
+    rateLimitRemaining: null,  // requests remaining
+    rateLimitReset: null,      // reset timestamp
+    powDifficulty: null,       // proof of work difficulty (higher = degraded)
+    serviceStatus: 'unknown'   // good, degraded, error
 };
 
 // Model pricing (per 1M tokens)
@@ -60,7 +67,31 @@ function setupFetchInterceptor() {
         const [url, options] = args;
         const urlStr = typeof url === 'string' ? url : url.toString();
 
-        // Only intercept ChatGPT/Gemini API calls
+        // Intercept session/models for account info
+        if (urlStr.includes('backend-api/models') || urlStr.includes('backend-api/me')) {
+            const response = await originalFetch.apply(this, args);
+            try {
+                const cloned = response.clone();
+                const data = await cloned.json();
+                // Detect account type from models response
+                if (data.categories) {
+                    // Has gpt-4 access = Plus or higher
+                    const hasGpt4 = data.categories.some(c =>
+                        c.default_model && c.default_model.includes('gpt-4')
+                    );
+                    stats.accountType = hasGpt4 ? 'plus' : 'free';
+                }
+                // From /me endpoint
+                if (data.picture || data.email) {
+                    if (data.organizations?.some(o => o.is_team)) {
+                        stats.accountType = 'team';
+                    }
+                }
+            } catch (e) { }
+            return response;
+        }
+
+        // Only intercept ChatGPT/Gemini API calls for main tracking
         const isRelevant = urlStr.includes('backend-api/conversation') ||
             urlStr.includes('generativelanguage.googleapis.com');
 
@@ -103,16 +134,53 @@ function setupFetchInterceptor() {
         // Track response time
         stats.responseTime = Date.now() - startTime;
 
-        // Try to count output tokens (streaming makes this tricky)
+        // Parse response headers for rate limits
+        try {
+            const rateLimit = response.headers.get('x-ratelimit-remaining');
+            const rateLimitReset = response.headers.get('x-ratelimit-reset');
+            if (rateLimit) stats.rateLimitRemaining = parseInt(rateLimit);
+            if (rateLimitReset) stats.rateLimitReset = parseInt(rateLimitReset);
+        } catch (e) { }
+
+        // Try to count output tokens and extract model info
         try {
             const text = await clonedResponse.text();
             const outputTokens = estimateTokens(text);
             stats.outputTokens += outputTokens;
 
+            // Try to extract verified model from response
+            try {
+                const lines = text.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+                        // ChatGPT returns model in response
+                        if (data.model) {
+                            stats.verifiedModel = data.model;
+                        }
+                        // Check for PoW difficulty (sentinel/turnstile)
+                        if (data.arkose_token || data.turnstile_token) {
+                            stats.powDifficulty = 'detected';
+                        }
+                    }
+                }
+            } catch (e) { }
+
             // Calculate total cost
             stats.totalCost = calculateCost(stats.inputTokens, stats.outputTokens, stats.currentModel);
 
-            console.log(`PromptGlass: Output ~${outputTokens} tokens, Response time: ${stats.responseTime}ms`);
+            // Determine service status
+            if (stats.responseTime > 10000) {
+                stats.serviceStatus = 'slow';
+            } else if (response.status >= 500) {
+                stats.serviceStatus = 'error';
+            } else if (stats.rateLimitRemaining !== null && stats.rateLimitRemaining < 5) {
+                stats.serviceStatus = 'limited';
+            } else {
+                stats.serviceStatus = 'good';
+            }
+
+            console.log(`PromptGlass: Output ~${outputTokens} tokens, Model: ${stats.verifiedModel}, Status: ${stats.serviceStatus}`);
 
             // Update UI
             updateStatsDisplay();
@@ -130,11 +198,34 @@ function setupFetchInterceptor() {
 function updateStatsDisplay() {
     const statsEl = document.getElementById('aph-stats');
     if (statsEl) {
+        // Status indicator colors
+        const statusColors = {
+            'good': '#30d158',
+            'slow': '#ff9f0a',
+            'limited': '#ff453a',
+            'error': '#ff453a',
+            'unknown': '#8e8e93'
+        };
+        const statusColor = statusColors[stats.serviceStatus] || statusColors.unknown;
+
+        // Model display (truncate long names)
+        const modelDisplay = stats.verifiedModel !== 'unknown'
+            ? stats.verifiedModel.replace('gpt-', '').substring(0, 6)
+            : '?';
+
+        // Rate limit warning
+        const rateLimitWarning = stats.rateLimitRemaining !== null && stats.rateLimitRemaining < 10
+            ? `⚠️${stats.rateLimitRemaining}`
+            : '';
+
         statsEl.innerHTML = `
-      <span title="Input tokens">↑${formatNumber(stats.inputTokens)}</span>
-      <span title="Output tokens">↓${formatNumber(stats.outputTokens)}</span>
-      <span title="Estimated cost">$${stats.totalCost.toFixed(4)}</span>
-    `;
+          <span class="aph-status-dot" style="background:${statusColor}" title="Service: ${stats.serviceStatus}"></span>
+          <span title="Model: ${stats.verifiedModel}">${modelDisplay}</span>
+          <span title="Input tokens">↑${formatNumber(stats.inputTokens)}</span>
+          <span title="Output tokens">↓${formatNumber(stats.outputTokens)}</span>
+          <span title="Estimated cost">$${stats.totalCost.toFixed(4)}</span>
+          ${rateLimitWarning ? `<span class="aph-rate-warn" title="Rate limit remaining">${rateLimitWarning}</span>` : ''}
+        `;
     }
 }
 

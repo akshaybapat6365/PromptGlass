@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "PromptGlass",
-  "version": "3.0",
-  "description": "Minimalist liquid-glass prompt helper with token counting & cost estimation.",
+  "version": "3.1",
+  "description": "Minimalist prompt helper with token counting, cost estimation & service monitoring.",
   "icons": {
     "128": "icons/icon128.png"
   },
