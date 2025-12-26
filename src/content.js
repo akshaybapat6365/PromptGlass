@@ -293,12 +293,12 @@ function showToast(msg, error = false) {
 }
 
 function makeDraggable(element) {
-  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
   let isDragging = false;
+  let startX, startY, startLeft, startTop;
 
   // Make draggable from handle
   element.addEventListener('mousedown', (e) => {
-    // Use closest() to handle clicks on child elements (like ::before pseudo)
+    // Use closest() to handle clicks on child elements
     const clickedHandle = e.target.closest('.aph-handle');
     const clickedContainer = e.target === element;
 
@@ -308,8 +308,22 @@ function makeDraggable(element) {
     isDragging = true;
     e.preventDefault();
     e.stopPropagation();
-    pos3 = e.clientX;
-    pos4 = e.clientY;
+
+    // Get strictly current visual position
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const rect = element.getBoundingClientRect();
+    startLeft = rect.left;
+    startTop = rect.top;
+
+    // Convert CSS positioning to explicit top/left to allow movement
+    element.style.left = startLeft + 'px';
+    element.style.top = startTop + 'px';
+    // Unset the conflicting anchors
+    element.style.bottom = 'auto';
+    element.style.right = 'auto';
+    element.style.margin = '0';
 
     document.addEventListener('mousemove', elementDrag);
     document.addEventListener('mouseup', closeDragElement);
@@ -318,14 +332,14 @@ function makeDraggable(element) {
   function elementDrag(e) {
     if (!isDragging) return;
     e.preventDefault();
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    element.style.top = (element.offsetTop - pos2) + "px";
-    element.style.left = (element.offsetLeft - pos1) + "px";
-    element.style.bottom = 'auto';
-    element.style.right = 'auto';
+
+    // Calculate delta
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    // Apply new position
+    element.style.top = (startTop + dy) + "px";
+    element.style.left = (startLeft + dx) + "px";
   }
 
   function closeDragElement() {
