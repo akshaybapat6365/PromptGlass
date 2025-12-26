@@ -48,31 +48,41 @@ function createToolbar() {
   // Dragging logic
   makeDraggable(container);
 
-  // Button Listeners
-  const buttons = container.querySelectorAll('.aph-btn');
-
-  // 1 & 2
-  buttons[1].addEventListener('click', () => insertText(" (Output: 1 sentence max)"));
-  buttons[2].addEventListener('click', () => insertText(" (Output: 2 sentences max)"));
+  // Button Listeners for 1 & 2 (using data attributes for safety)
+  container.querySelector('.aph-btn[title="1 Sentence"]').addEventListener('click', () => insertText(" (Output: 1 sentence max)"));
+  container.querySelector('.aph-btn[title="2 Sentences"]').addEventListener('click', () => insertText(" (Output: 2 sentences max)"));
 
   // Custom Number Logic
   const customBtn = document.getElementById('aph-custom-btn');
   const customInput = document.getElementById('aph-custom-input');
 
+  // Only toggle expansion when clicking the button itself, not the input
   customBtn.addEventListener('click', (e) => {
-    if (e.target === customInput) return; // Don't collapse if clicking input
-    customBtn.classList.toggle('expanded');
-    if (customBtn.classList.contains('expanded')) {
+    // Ignore clicks on the input field
+    if (e.target === customInput) {
+      e.stopPropagation();
+      return;
+    }
+
+    // Toggle expanded state
+    const isExpanded = customBtn.classList.toggle('expanded');
+    if (isExpanded) {
       customInput.style.display = 'block';
       customInput.focus();
     } else {
       customInput.style.display = 'none';
     }
+
+    // Prevent this click from doing anything else
+    e.stopPropagation();
   });
 
   customInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
+      e.preventDefault();  // Prevent the default form submission behavior
       e.stopPropagation(); // Stop 'Enter' from bubbling to the form
+      e.stopImmediatePropagation(); // Stop any other listeners
+
       const val = customInput.value;
       if (val) {
         insertText(` (Output: Max ${val} sentences)`);
