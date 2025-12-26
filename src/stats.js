@@ -194,6 +194,48 @@ function setupFetchInterceptor() {
     console.log('PromptGlass: Fetch interceptor active');
 }
 
+// DEBUG: Log all ChatGPT API responses to console
+function setupDebugInterceptor() {
+    const originalFetch = window.fetch;
+
+    window.fetch = async function (...args) {
+        const [url, options] = args;
+        const urlStr = typeof url === 'string' ? url : url.toString();
+
+        // Log ALL backend-api calls
+        if (urlStr.includes('backend-api') || urlStr.includes('chatgpt.com/api')) {
+            console.log('🔍 PromptGlass intercepted:', urlStr);
+
+            const response = await originalFetch.apply(this, args);
+
+            // Log headers
+            console.log('📋 Response headers:');
+            response.headers.forEach((value, key) => {
+                console.log(`  ${key}: ${value}`);
+            });
+
+            // Try to log body (for non-streaming)
+            try {
+                const cloned = response.clone();
+                const text = await cloned.text();
+                if (text.length < 5000) {
+                    console.log('📦 Response body:', text.substring(0, 1000));
+                } else {
+                    console.log('📦 Response body (truncated):', text.substring(0, 500) + '...');
+                }
+            } catch (e) {
+                console.log('⚠️ Could not read response body');
+            }
+
+            return response;
+        }
+
+        return originalFetch.apply(this, args);
+    };
+
+    console.log('🔍 PromptGlass DEBUG mode active - check console for API responses');
+}
+
 // Update the stats display in UI
 function updateStatsDisplay() {
     const statsEl = document.getElementById('aph-stats');
@@ -286,6 +328,10 @@ function initStatsModule() {
 // Export for use in main content script
 window.PromptGlassStats = {
     init: initStatsModule,
+    debug: setupDebugInterceptor,  // Call this to see what ChatGPT returns
     getStats: () => stats,
     updateDisplay: updateStatsDisplay
 };
+
+// Auto-run debug mode for now to see what's happening
+setupDebugInterceptor();
