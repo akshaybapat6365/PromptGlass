@@ -184,3 +184,46 @@
 .aph-menu-item:hover {
   background: rgba(255, 255, 255, 0.12);
 }
+
+/* Stats Display */
+.aph-stats {
+  display: flex;
+  gap: 6px;
+  padding: 0 6px;
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(128, 128, 128, 0.8);
+  border-right: 1px solid rgba(128, 128, 128, 0.2);
+  margin-right: 2px;
+}
+
+.aph-stats span {
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  .aph-stats {
+    color: rgba(180, 180, 180, 0.8);
+  }
+}
+
+/* Collapsible Code Block Toggle */
+.aph-code-toggle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(128, 128, 128, 0.3);
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.15s;
+}
+
+.aph-code-toggle:hover {
+  background: rgba(128, 128, 128, 0.5);
+}
