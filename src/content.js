@@ -3,13 +3,28 @@
 let customTemplates = [];
 let lastFocusedInput = null; // Track the last focused input element
 
+// Helper to check if extension context is valid
+function isContextValid() {
+  try {
+    return !!chrome.runtime?.id;
+  } catch {
+    return false;
+  }
+}
+
 // Load templates on start
-chrome.storage.sync.get({ templates: [] }, (data) => {
-  customTemplates = data.templates;
-});
+try {
+  chrome.storage.sync.get({ templates: [] }, (data) => {
+    if (chrome.runtime.lastError || !isContextValid()) return;
+    customTemplates = data.templates;
+  });
+} catch (e) {
+  console.warn('PromptGlass: Extension context invalidated. Please refresh the page.');
+}
 
 // Listen for storage changes
 chrome.storage.onChanged.addListener((changes, area) => {
+  if (!isContextValid()) return;
   if (area === 'sync' && changes.templates) {
     customTemplates = changes.templates.newValue;
   }
@@ -175,7 +190,16 @@ function createToolbar() {
       }
 
       // Save to templates
+      if (!isContextValid()) {
+        showToast("Extension reloaded - please refresh page", true);
+        return;
+      }
+
       chrome.storage.sync.get({ templates: [] }, (data) => {
+        if (chrome.runtime.lastError || !isContextValid()) {
+          showToast("Extension error - refresh page", true);
+          return;
+        }
         const newTmpl = {
           id: Date.now().toString(),
           label: cleanText.substring(0, 10) + '...', // Auto-label
@@ -184,6 +208,7 @@ function createToolbar() {
         const updated = data.templates;
         updated.push(newTmpl);
         chrome.storage.sync.set({ templates: updated }, () => {
+          if (chrome.runtime.lastError || !isContextValid()) return;
           showToast("Saved as Template!");
         });
       });
@@ -380,7 +405,11 @@ function saveToHistory() {
 
   lastSavedText = text; // Debounce duplicate saves
 
+  if (!isContextValid()) return; // Extension reloaded, silently skip
+
   chrome.storage.sync.get({ history: [] }, (data) => {
+    if (chrome.runtime.lastError || !isContextValid()) return;
+
     const history = data.history;
     history.push({
       timestamp: Date.now(),
@@ -393,9 +422,8 @@ function saveToHistory() {
     chrome.storage.sync.set({ history }, () => {
       if (chrome.runtime.lastError) {
         console.warn("Cloud Sync Error:", chrome.runtime.lastError);
-        showToast("Sync Error: History full?", true);
-      } else {
-        console.log("AI Prompt Helper: Saved to Cloud History");
+      } else if (isContextValid()) {
+        console.log("PromptGlass: Saved to Cloud History");
       }
     });
   });
